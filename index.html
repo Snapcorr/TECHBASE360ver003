@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TechBase360 - Технологический хаб будущего</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://unpkg.com/three@0.128.0/examples/js/loaders/FontLoader.js"></script>
+    <script src="https://unpkg.com/three@0.128.0/examples/js/geometries/TextGeometry.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollToPlugin.min.js"></script>
@@ -12,102 +14,90 @@
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         :root {
-            --graphite: #2a2d34;
+            --graphite-dark: #1a1c21;
             --accent-orange: #ff7a45;
             --accent-green: #8bc34a;
             --accent-cyan: #00bcd4;
             --glow-cyan: rgba(0, 188, 212, 0.7);
         }
-        body { font-family: 'Inter', sans-serif; background: #0a0a0a; color: #ffffff; overflow-x: hidden; cursor: none; }
-        .cursor { position: fixed; width: 10px; height: 10px; background: var(--accent-cyan); border-radius: 50%; pointer-events: none; z-index: 9999; transform: translate(-50%, -50%); mix-blend-mode: difference; animation: cursorPulse 2s infinite; }
-        @keyframes cursorPulse { 0% { box-shadow: 0 0 0 0 var(--glow-cyan); } 70% { box-shadow: 0 0 10px 15px rgba(0, 188, 212, 0); } 100% { box-shadow: 0 0 0 0 rgba(0, 188, 212, 0); } }
-        .cursor-follow { position: fixed; width: 40px; height: 40px; border: 1px solid rgba(0, 188, 212, 0.3); border-radius: 50%; pointer-events: none; z-index: 9998; transform: translate(-50%, -50%); transition: transform 0.2s ease-out; }
+        body { font-family: 'Inter', sans-serif; background-color: #05070a; color: #ffffff; overflow-x: hidden; cursor: none; }
+        
+        /* ИСПРАВЛЕНИЕ 3: Надежный и заметный курсор */
+        .cursor-dot { position: fixed; width: 8px; height: 8px; background-color: white; border-radius: 50%; pointer-events: none; z-index: 10001; transform: translate(-50%, -50%); mix-blend-mode: difference; }
+        .cursor-outline { position: fixed; width: 40px; height: 40px; border: 1px solid var(--accent-cyan); border-radius: 50%; pointer-events: none; z-index: 10000; transform: translate(-50%, -50%); transition: transform 0.2s ease-out; }
+
+        /* ИСПРАВЛЕНИЕ 2: Объемный фон (контейнер) */
+        #background-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; }
+
         .hero { height: 100vh; position: relative; display: flex; align-items: center; justify-content: center; overflow: hidden; }
-        .hero-bg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; }
+        .hero-bg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
         .hero-content { text-align: center; z-index: 2; max-width: 800px; padding: 0 20px; }
-        .hero-title { font-size: clamp(2.5rem, 6vw, 6rem); font-family: 'JetBrains Mono', monospace; font-weight: 700; line-height: 0.9; margin-bottom: 2rem; background: linear-gradient(45deg, var(--accent-orange), var(--accent-green)); background-size: 400% 400%; -webkit-background-clip: text; -webkit-text-fill-color: transparent; animation: gradientShift 4s ease-in-out infinite; transition: transform 0.5s ease-out; }
+        .hero-title { font-size: clamp(2.5rem, 6vw, 6rem); font-family: 'JetBrains Mono', monospace; font-weight: 700; line-height: 0.9; margin-bottom: 2rem; background: linear-gradient(45deg, var(--accent-orange), var(--accent-green)); background-size: 200% 200%; -webkit-background-clip: text; -webkit-text-fill-color: transparent; animation: gradientShift 4s ease-in-out infinite; }
         @keyframes gradientShift { 0%, 100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
         .hero-subtitle { font-size: 1.5rem; font-weight: 300; margin-bottom: 3rem; opacity: 0.8; }
-        .cta-button { padding: 16px 48px; background: rgba(0, 188, 212, 0.1); border: 2px solid var(--accent-cyan); color: var(--accent-cyan); text-decoration: none; font-weight: 600; font-family: 'JetBrains Mono', monospace; text-transform: uppercase; letter-spacing: 2px; backdrop-filter: blur(10px); transition: all 0.3s ease; position: relative; overflow: hidden; }
-        .cta-button::before { content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%; background: linear-gradient(90deg, transparent, rgba(0, 188, 212, 0.3), transparent); transition: left 0.5s ease; }
-        .cta-button:hover::before { left: 100%; }
-        .cta-button:hover { box-shadow: 0 0 30px var(--glow-cyan); transform: translateY(-2px); }
+        .cta-button { padding: 16px 48px; background: rgba(0, 188, 212, 0.1); border: 2px solid var(--accent-cyan); color: var(--accent-cyan); text-decoration: none; font-weight: 600; font-family: 'JetBrains Mono', monospace; text-transform: uppercase; letter-spacing: 2px; backdrop-filter: blur(5px); transition: all 0.3s ease; }
+        .cta-button:hover { box-shadow: 0 0 30px var(--glow-cyan), inset 0 0 20px rgba(0, 188, 212, 0.2); transform: translateY(-2px); }
         
-        /* ИСПРАВЛЕНИЕ 1: Навигация растянута по ширине */
-        .nav {
-            position: fixed;
-            top: 20px;
-            left: 5%; /* Отступ слева */
-            width: 90%; /* Ширина контейнера */
-            z-index: 1000;
-            display: flex;
-            justify-content: space-around; /* Равномерное распределение */
-            align-items: center;
-        }
-
-        .nav-item { padding: 10px 20px; background: rgba(42, 45, 52, 0.5); backdrop-filter: blur(10px); border: 1px solid rgba(139, 195, 74, 0.3); border-radius: 5px; color: var(--accent-green); text-decoration: none; font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
-        .nav-item:hover, .nav-item.active { background: var(--accent-green); color: var(--graphite-dark); border-color: var(--accent-green); transform: translateY(-3px); box-shadow: 0 0 20px rgba(139, 195, 74, 0.4); }
+        /* ИСПРАВЛЕНИЕ 1: Единый блок навигации */
+        .nav { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 1000; background: rgba(10, 10, 15, 0.5); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 10px; backdrop-filter: blur(10px); padding: 5px; box-shadow: 0 5px 25px rgba(0,0,0,0.3); }
+        .nav-container { display: flex; justify-content: center; }
+        .nav-item { padding: 10px 20px; color: #a9c5d0; text-decoration: none; font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; transition: all 0.3s ease; border-radius: 7px; position: relative; }
+        .nav-item:hover, .nav-item.active { color: #ffffff; background: rgba(0, 188, 212, 0.2); }
         
+        .section { padding: 120px 20px; position: relative; }
         .section-title { font-size: 3rem; font-weight: 700; margin-bottom: 60px; text-align: center; background: linear-gradient(45deg, #ffffff, var(--accent-cyan)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .particles { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: -2; }
-        .stats-section, .map-section, .infrastructure, .energy-section, .contact-section { padding: 120px 20px; position: relative; }
-        .stats-container, .infrastructure-grid, .map-container, .energy-container, .contact-info { max-width: 1200px; margin: 0 auto; }
+        .container { max-width: 1200px; margin: 0 auto; }
         
-        /* ИСПРАВЛЕНИЕ 2: Стили для карточек статистики */
         .stats-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 40px; }
-        .stat-card { background: rgba(42, 45, 52, 0.8); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); padding: 40px 30px; text-align: center; transition: all 0.5s ease; border-radius: 10px; }
-        .stat-card:hover { transform: translateY(-10px) scale(1.03); border-color: var(--accent-orange); box-shadow: 0 20px 40px rgba(0,0,0,0.2); }
+        .stat-card { background: rgba(30, 35, 45, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); padding: 40px 30px; text-align: center; transition: all 0.5s ease; border-radius: 10px; }
+        .stat-card:hover { transform: translateY(-10px); border-color: var(--accent-orange); box-shadow: 0 20px 40px rgba(0,0,0,0.2); }
         .stat-number { font-size: 3rem; font-weight: 700; font-family: 'JetBrains Mono', monospace; color: var(--accent-orange); margin-bottom: 10px; }
         .stat-label { font-size: 1.1rem; opacity: 0.8; }
-        
         .map-canvas { width: 100%; height: 600px; border: 1px solid rgba(0, 188, 212, 0.3); border-radius: 10px; }
         .infrastructure-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 40px; }
-        .infrastructure-card { background: rgba(42, 45, 52, 0.8); border-radius: 10px; padding: 40px; text-align: center; transition: all 0.5s ease; border: 1px solid rgba(255, 255, 255, 0.1); }
-        .infrastructure-card:hover { transform: translateY(-10px) scale(1.03); border-color: var(--accent-green); box-shadow: 0 20px 40px rgba(0,0,0,0.2); }
+        .infrastructure-card { background: rgba(30, 35, 45, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 10px; padding: 40px; text-align: center; transition: all 0.5s ease; }
+        .infrastructure-card:hover { transform: translateY(-10px); border-color: var(--accent-green); box-shadow: 0 20px 40px rgba(0,0,0,0.2); }
         .card-icon { width: 60px; height: 60px; background: linear-gradient(45deg, var(--accent-orange), var(--accent-cyan)); border-radius: 10px; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center; font-size: 24px; }
         .card-title { font-size: 1.5rem; font-weight: 600; margin-bottom: 15px; color: var(--accent-green); }
         .card-description { opacity: 0.8; line-height: 1.6; }
-        
-        /* ИСПРАВЛЕНИЕ 3: Стили для шкалы энергетики */
-        .energy-widget { background: rgba(42, 45, 52, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(0, 188, 212, 0.2); padding: 60px; border-radius: 20px; text-align: center; }
+        .energy-widget { background: rgba(30, 35, 45, 0.6); border: 1px solid rgba(0, 188, 212, 0.2); padding: 60px; border-radius: 20px; text-align: center; }
         .energy-scale { width: 100%; height: 20px; background: rgba(255, 255, 255, 0.1); border-radius: 10px; overflow: hidden; margin: 40px 0; }
         .energy-fill { height: 100%; background-color: var(--accent-green); border-radius: 10px; width: 0%; }
         .energy-labels { display: flex; justify-content: space-between; margin-top: 20px; font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; }
-        
-        /* ИСПРАВЛЕНИЕ 4: Стили для кнопок контактов */
         .contact-info { display: grid; gap: 30px; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); }
-        .contact-item { background: rgba(42, 45, 52, 0.8); border: 1px solid rgba(0, 188, 212, 0.2); padding: 30px; border-radius: 10px; transition: all 0.3s ease; text-align: center; }
+        .contact-item { background: rgba(30, 35, 45, 0.6); border: 1px solid rgba(0, 188, 212, 0.2); padding: 30px; border-radius: 10px; transition: all 0.3s ease; text-align: center; }
         .contact-item:hover { border-color: var(--accent-cyan); transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.2); }
         .contact-label { font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; color: var(--accent-cyan); margin-bottom: 10px; display: block; }
         .contact-value { font-size: 1.2rem; font-weight: 500; }
-        
-        .loading-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #0a0a0a; display: flex; align-items: center; justify-content: center; z-index: 10000; transition: opacity 1s ease; }
+        .loading-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #05070a; display: flex; align-items: center; justify-content: center; z-index: 10001; transition: opacity 1s ease; }
         .loading-text { font-family: 'JetBrains Mono', monospace; font-size: 1.5rem; color: var(--accent-cyan); animation: pulse 2s ease-in-out infinite; }
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
-        @media (max-width: 900px) { .nav { flex-direction: column; align-items: center; gap: 10px; width: 100%; left: 0; top: 10px; } }
+        @media (max-width: 768px) { .nav { width: 95%; } .nav-item { padding: 8px 12px; font-size: 0.8rem; } .section-title { font-size: 2.2rem; } }
     </style>
 </head>
 <body>
-    <div class="cursor"></div>
-    <div class="cursor-follow"></div>
+    <div class="cursor-dot"></div>
+    <div class="cursor-outline"></div>
 
     <div class="loading-screen" id="loadingScreen">
-        <div class="loading-text">ИНИЦИАЛИЗАЦИЯ TECHBASE360...</div>
+        <div class="loading-text">ИНИЦИАЛИЗАЦИЯ ПОЛЬЗОВАТЕЛЯ...</div>
     </div>
 
     <nav class="nav">
-        <a href="#hero" class="nav-item">ГЛАВНАЯ</a>
-        <a href="#stats" class="nav-item">ДАННЫЕ</a>
-        <a href="#map" class="nav-item">КАРТА</a>
-        <a href="#infrastructure" class="nav-item">ИНФРАСТРУКТУРА</a>
-        <a href="#energy" class="nav-item">ЭНЕРГЕТИКА</a>
-        <a href="#contact" class="nav-item">КОНТАКТЫ</a>
+        <div class="nav-container">
+            <a href="#hero" class="nav-item active">ГЛАВНАЯ</a>
+            <a href="#stats" class="nav-item">ДАННЫЕ</a>
+            <a href="#map" class="nav-item">КАРТА</a>
+            <a href="#infrastructure" class="nav-item">ИНФРАСТРУКТУРА</a>
+            <a href="#energy" class="nav-item">ЭНЕРГЕТИКА</a>
+            <a href="#contact" class="nav-item">КОНТАКТЫ</a>
+        </div>
     </nav>
-
-    <canvas class="particles" id="particlesCanvas"></canvas>
+    
+    <canvas id="background-canvas"></canvas>
 
     <section class="hero" id="hero">
-        <canvas class="hero-bg" id="heroCanvas"></canvas>
+        <div class="hero-bg" id="heroCanvas"></div>
         <div class="hero-content">
             <h1 class="hero-title">TECHBASE360</h1>
             <p class="hero-subtitle">Промышленный комплекс нового поколения</p>
@@ -115,128 +105,202 @@
         </div>
     </section>
 
-    <section class="stats-section" id="stats">
-        <div class="stats-container">
+    <section class="section" id="stats">
+        <h2 class="section-title">КЛЮЧЕВЫЕ ПОКАЗАТЕЛИ</h2>
+        <div class="container stats-container">
             <div class="stat-card"><div class="stat-number" data-target="2020">0</div><div class="stat-label">М² общая площадь</div></div>
             <div class="stat-card"><div class="stat-number" data-target="640">0</div><div class="stat-label">М² площадь застройки</div></div>
             <div class="stat-card"><div class="stat-number" data-target="4.5">0</div><div class="stat-label">М высота потолков</div></div>
             <div class="stat-card"><div class="stat-number" data-target="5">0</div><div class="stat-label">Т/М² нагрузка на пол</div></div>
-            <div class="stat-card"><div class="stat-number" data-target="150">0</div><div class="stat-label">кВт базовое электроснабжение</div></div>
-            <div class="stat-card"><div class="stat-number" data-target="120">0</div><div class="stat-label">мест для легковых авто</div></div>
+            <div class="stat-card"><div class="stat-number" data-target="150">0</div><div class="stat-label">кВт электроснабжение</div></div>
+            <div class="stat-card"><div class="stat-number" data-target="120">0</div><div class="stat-label">мест для авто</div></div>
         </div>
     </section>
 
-    <section class="map-section" id="map">
-        <h2 class="section-title">ИНТЕРАКТИВНАЯ КАРТА ЭКОСИСТЕМЫ</h2>
-        <div class="map-container"><canvas class="map-canvas" id="mapCanvas"></canvas></div>
+    <section class="section" id="map">
+        <h2 class="section-title">ИНТЕРАКТИВНАЯ КАРТА</h2>
+        <div class="container"><canvas class="map-canvas" id="mapCanvas"></canvas></div>
     </section>
     
-    <section class="infrastructure" id="infrastructure">
+    <section class="section" id="infrastructure">
         <h2 class="section-title">ИНФРАСТРУКТУРА</h2>
-        <div class="infrastructure-grid">
-            <div class="infrastructure-card"><div class="card-icon">🏭</div><h3 class="card-title">Производственный цех</h3><p class="card-description">Высота потолков 4.5м, нагрузка до 5 т/м², крановые пути.</p></div>
-            <div class="infrastructure-card"><div class="card-icon">🔧</div><h3 class="card-title">База СТО</h3><p class="card-description">Сквозной проезд для спецтехники, площадка ~1100 м².</p></div>
-            <div class="infrastructure-card"><div class="card-icon">⚙️</div><h3 class="card-title">Сборочная линия</h3><p class="card-description">Модульная планировка для разных производственных процессов.</p></div>
-            <div class="infrastructure-card"><div class="card-icon">🚛</div><h3 class="card-title">Логистический хаб</h3><p class="card-description">Склад Wildberries (10 км), завод "Технониколь", трасса М-5 (3 км).</p></div>
-            <div class="infrastructure-card"><div class="card-icon">⚡</div><h3 class="card-title">Энергоснабжение</h3><p class="card-description">150 кВт базовое подключение, расширение до 50 МВт.</p></div>
-            <div class="infrastructure-card"><div class="card-icon">🔥</div><h3 class="card-title">Газификация</h3><p class="card-description">Техническое подключение к газовой сети.</p></div>
+        <div class="container infrastructure-grid">
+            <div class="infrastructure-card"><div class="card-icon">🏭</div><h3 class="card-title">Производство</h3><p class="card-description">Гибкие цеха с высокими потолками и крановыми путями.</p></div>
+            <div class="infrastructure-card"><div class="card-icon">📦</div><h3 class="card-title">Склад</h3><p class="card-description">Современные складские помещения .</p></div>
+            <div class="infrastructure-card"><div class="card-icon">🏢</div><h3 class="card-title">Офисы</h3><p class="card-description">Комфортные офисные пространства для вашей команды.</p></div>
+            <div class="infrastructure-card"><div class="card-icon">🚛</div><h3 class="card-title">Логистика</h3><p class="card-description">Удобные подъездные пути и близость к транспортным артериям.</p></div>
+            <div class="infrastructure-card"><div class="card-icon">⚡</div><h3 class="card-title">Энергия</h3><p class="card-description">Высокие мощности с возможностью расширения.</p></div>
+            <div class="infrastructure-card"><div class="card-icon">🅿️</div><h3 class="card-title">Фулфилмент</h3><p class="card-description">Просторная стоянка для легкового и грузового транспорта.</p></div>
         </div>
     </section>
     
-    <section class="energy-section" id="energy">
+    <section class="section" id="energy">
         <h2 class="section-title">ЭНЕРГЕТИЧЕСКИЙ ПОТЕНЦИАЛ</h2>
-        <div class="energy-container"><div class="energy-widget"><h3 style="font-size: 2rem; margin-bottom: 20px; color: var(--accent-cyan);">Электроснабжение</h3><div class="energy-scale"><div class="energy-fill" id="energyFill"></div></div><div class="energy-labels"><span>Базовое: 150 кВт</span><span>Максимальное: 50 МВт</span></div><p style="margin-top: 30px; font-size: 1.2rem; opacity: 0.8;">Масштабируемая инфраструктура для любых потребностей</p></div></div>
+        <div class="container"><div class="energy-widget"><h3 style="font-size: 2rem; margin-bottom: 20px; color: var(--accent-cyan);">Электроснабжение</h3><div class="energy-scale"><div class="energy-fill" id="energyFill"></div></div><div class="energy-labels"><span>Базовое: 150 кВт</span><span>Максимальное: 50 МВт</span></div><p style="margin-top: 30px; font-size: 1.2rem; opacity: 0.8;">Масштабируемая инфраструктура для любых потребностей</p></div></div>
     </section>
     
-    <section class="contact-section" id="contact">
-        <h2 class="section-title">КОНТАКТЫ</h2>
-        <div class="contact-info">
+    <section class="section" id="contact">
+        <h2 class="section-title">СВЯЖИТЕСЬ С НАМИ</h2>
+        <div class="container contact-info">
             <div class="contact-item"><div class="contact-label">ТЕЛЕФОН</div><div class="contact-value">+7 (495) 294-99-22</div></div>
             <div class="contact-item"><div class="contact-label">EMAIL</div><div class="contact-value">info@vskbase.ru</div></div>
-            <div class="contact-item"><div class="contact-label">ДОКУМЕНТЫ</div><div class="contact-value">Технический паспорт • 3D-тур</div></div>
+            <div class="contact-item"><div class="contact-label">ДОКУМЕНТЫ</div><div class="contact-value">Запросить презентацию</div></div>
         </div>
     </section>
 
     <script type="module">
-        // Ожидаем готовности DOM и библиотек
+        // Проверка на наличие ключевых библиотек
+        if (typeof THREE === 'undefined' || typeof gsap === 'undefined') {
+            console.error("Ключевые библиотеки (THREE, GSAP) не загрузились!");
+            return;
+        }
+
+        // --- Глобальные настройки и переменные ---
+        const FONT_URL = 'https://unpkg.com/three@0.128.0/examples/fonts/helvetiker_regular.typeface.json';
+
+        // --- Инициализация после загрузки DOM ---
         document.addEventListener("DOMContentLoaded", () => {
-            if (typeof THREE === 'undefined' || typeof gsap === 'undefined') {
-                console.error("Ключевые библиотеки не загрузились!");
-                return;
-            }
-            
-            // Регистрация плагинов
             gsap.registerPlugin(ScrollTrigger, ScrollToPlugin);
             
-            // Скрытие экрана загрузки
             const loadingScreen = document.getElementById('loadingScreen');
             if (loadingScreen) {
                 setTimeout(() => {
                     loadingScreen.style.opacity = '0';
                     setTimeout(() => loadingScreen.style.display = 'none', 1000);
-                }, 1000);
+                }, 500);
             }
 
-            // Запуск всех модулей
-            try {
-                initCustomCursor();
-                initParticles();
-                initHero3D();
-                initMap3D();
-                initAnimations();
-                initNavigation();
-                initHeroTitleEffect();
-            } catch (error) {
-                console.error("Ошибка при глобальной инициализации:", error);
-            }
+            // Модульная инициализация с защитой от ошибок
+            runSafely(initCustomCursor);
+            runSafely(initBackground3D);
+            runSafely(initHero3D);
+            runSafely(initAnimations);
+            runSafely(initNavigation);
         });
+
+        function runSafely(func) {
+            try { func(); } catch (error) { console.error(`Ошибка при выполнении ${func.name}:`, error); }
+        }
+
+        // --- Функции инициализации ---
+
+        function initCustomCursor() {
+            const dot = document.querySelector('.cursor-dot');
+            const outline = document.querySelector('.cursor-outline');
+            window.addEventListener('mousemove', e => {
+                gsap.to(dot, { duration: 0.3, x: e.clientX, y: e.clientY });
+                gsap.to(outline, { duration: 0.7, x: e.clientX, y: e.clientY, ease: "power1.out" });
+            });
+        }
+
+        function initBackground3D() {
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            const renderer = new THREE.WebGLRenderer({ canvas: document.querySelector("#background-canvas"), alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            camera.position.z = 50;
+
+            const material = new THREE.LineBasicMaterial({ color: 0x333333, transparent: true, opacity: 0.2 });
+            const shapes = new THREE.Group();
+            for (let i = 0; i < 50; i++) {
+                const geometry = new THREE.IcosahedronGeometry(Math.random() * 10, 0);
+                const line = new THREE.Line(geometry, material);
+                line.position.set((Math.random() - 0.5) * 200, (Math.random() - 0.5) * 200, (Math.random() - 0.5) * 200);
+                line.rotation.set(Math.random(), Math.random(), Math.random());
+                shapes.add(line);
+            }
+            scene.add(shapes);
+
+            function animate() {
+                requestAnimationFrame(animate);
+                shapes.rotation.y += 0.0005;
+                renderer.render(scene, camera);
+            }
+            animate();
+            window.addEventListener('resize', () => { renderer.setSize(window.innerWidth, window.innerHeight); camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); });
+        }
+
+        function initHero3D() {
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            const renderer = new THREE.WebGLRenderer({ canvas: document.querySelector("#heroCanvas"), alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            const textGroup = new THREE.Group();
+            scene.add(textGroup);
+            camera.position.z = 20;
+
+            const fontLoader = new THREE.FontLoader();
+            fontLoader.load(FONT_URL, (font) => {
+                const material = new THREE.MeshBasicMaterial({ color: var(--accent-cyan), wireframe: true });
+                const words = ["АРЕНДА", "ПРОИЗВОДСТВО", "АВТОСЕРВИС", "АВТОСТОЯНКА"];
+                words.forEach((text, i) => {
+                    const textGeo = new THREE.TextGeometry(text, { font: font, size: 2, height: 0.2, curveSegments: 12 });
+                    textGeo.center();
+                    const textMesh = new THREE.Mesh(textGeo, material);
+                    const angle = (i / words.length) * Math.PI * 2;
+                    textMesh.position.set(Math.cos(angle) * 10, Math.sin(angle) * 5, Math.sin(angle) * 10);
+                    textGroup.add(textMesh);
+                });
+            });
+            
+            function animate() {
+                requestAnimationFrame(animate);
+                textGroup.rotation.y += 0.005;
+                textGroup.rotation.x = Math.sin(Date.now() * 0.0005) * 0.2;
+                renderer.render(scene, camera);
+            }
+            animate();
+            window.addEventListener('resize', () => { renderer.setSize(window.innerWidth, window.innerHeight); camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); });
+        }
         
-        // --- ФУНКЦИИ ---
-
-        function initCustomCursor() { /* Код без изменений */ }
-        function initParticles() { /* Код без изменений */ }
-        function initHero3D() { /* Код без изменений и должен работать */ }
-        function initMap3D() { /* Код без изменений и должен работать */ }
-
         function initAnimations() {
-            // ИСПРАВЛЕНИЕ 2: Надежная анимация цифр
             document.querySelectorAll(".stat-number").forEach(el => {
                 const target = parseFloat(el.dataset.target) || 0;
                 let proxy = { val: 0 };
-                gsap.to(proxy, {
-                    val: target,
-                    duration: 2,
-                    ease: "power1.out",
-                    scrollTrigger: {
-                        trigger: el,
-                        start: "top 85%",
-                    },
-                    onUpdate: () => {
-                        el.textContent = proxy.val.toFixed(target % 1 === 0 ? 0 : 1);
-                    }
+                gsap.to(proxy, { val: target, duration: 2, ease: "power1.out", scrollTrigger: { trigger: el, start: "top 85%" }, onUpdate: () => { el.textContent = proxy.val.toFixed(target % 1 === 0 ? 0 : 1); } });
+            });
+
+            const energyFill = document.getElementById('energyFill');
+            if (energyFill) {
+                let tl = gsap.timeline({ scrollTrigger: { trigger: '.energy-section', start: "top center", toggleActions: "play none none reverse" } });
+                tl.to(energyFill, { width: '75%', duration: 3, ease: "power1.inOut" });
+                tl.to(energyFill, { backgroundColor: '#ff4545', duration: 1.5 }, "-=1.5");
+            }
+            
+            document.querySelectorAll('.stat-card, .infrastructure-card, .contact-item, .section-title').forEach(el => {
+                gsap.from(el, { opacity: 0, y: 50, duration: 1, scrollTrigger: { trigger: el, start: 'top 90%' } });
+            });
+        }
+        
+        function initNavigation() {
+            const sections = gsap.utils.toArray('.section');
+            const navItems = gsap.utils.toArray('.nav-item');
+
+            sections.forEach((section, i) => {
+                ScrollTrigger.create({
+                    trigger: section,
+                    start: "top center",
+                    end: "bottom center",
+                    onToggle: self => self.isActive && setActive(i)
                 });
             });
 
-            // ИСПРАВЛЕНИЕ 3: Анимация шкалы с изменением цвета
-            const energyFill = document.getElementById('energyFill');
-            if (energyFill) {
-                gsap.to(energyFill, {
-                    width: '75%', // Целевая ширина
-                    backgroundColor: '#ff4545', // Конечный красный цвет
-                    duration: 3,
-                    ease: "power1.inOut",
-                    scrollTrigger: {
-                        trigger: '.energy-section',
-                        start: "top center",
-                        toggleActions: "play none none reverse"
-                    }
-                });
+            function setActive(index) {
+                navItems.forEach(item => item.classList.remove('active'));
+                navItems[index + 1] && navItems[index + 1].classList.add('active'); // +1 because hero is not in sections
             }
-        }
-        
-        function initNavigation() { /* Код без изменений и должен работать */ }
-        function initHeroTitleEffect() { /* Код без изменений и должен работать */ }
 
+            navItems.forEach(item => {
+                item.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const targetId = item.getAttribute('href');
+                    gsap.to(window, { scrollTo: { y: targetId, offsetY: 50 }, duration: 1, ease: "power2.inOut" });
+                });
+            });
+
+            const ctaButton = document.querySelector('.cta-button');
+            if(ctaButton) ctaButton.addEventListener('click', e => { e.preventDefault(); gsap.to(window, { scrollTo: '#stats', offsetY: 50, duration: 1.5, ease: "power2.inOut" }); });
+        }
     </script>
 </body>
 </html>
